@@ -397,8 +397,7 @@
       }
 
       function init() {
-        toggleButtonStates();
-        refreshUserLogin();
+        toggleButtonStates();        
       }
 
       function loginWithFacebook() {
@@ -439,11 +438,7 @@
 
       function refreshUserLogin() {
 
-        if (user == null) {
-          $('#headerLoginStatus').html('<input type="button" class="btn btn-success" value="Log in" onclick="loginWithFacebook();" id="loginButton"></input>');
-        }
-
-        user.isLoggedIn({
+        StackMob.isLoggedIn({
           yes: function(){
             console.log('Refreshing user login. User is logged in.');
           $('#headerLoginStatus').html('<input type="button" class="btn btn-info" value="'+user.username+'" onclick="logout();" id="logoutButton"></input>');
@@ -459,6 +454,10 @@
         user.logout();
         refreshUserLogin();
       }
+
+      $(document).ready( function() {
+        refreshUserLogin();
+      });
 
     </script>
 
