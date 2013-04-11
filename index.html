@@ -413,9 +413,11 @@
               user.loginWithFacebookAutoCreate(accessToken, false, {
                 success: function(model) {
                   console.log("Callback success")
+                  refreshUserLogin();
                 },
                 error: function(model, response) {
                   console.log('Callback error')
+                  refreshUserLogin();
                 }
               });
 
