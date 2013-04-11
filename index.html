@@ -407,7 +407,7 @@
             FB.api('/me', function(response) {
        
               var user = new StackMob.User({ username: response.email });
-              user.linkUserWithFacebook(accessToken, false);
+              user.loginWithFacebookAutoCreate(accessToken, false);
        
             });
        
