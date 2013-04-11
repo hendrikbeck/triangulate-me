@@ -100,6 +100,8 @@
 
       var infowindow = new google.maps.InfoWindow();
 
+      var user;
+
       
       window.fbAsyncInit = function() {
           FB.init({
@@ -396,6 +398,7 @@
 
       function init() {
         toggleButtonStates();
+        refreshUserLogin();
       }
 
       function loginWithFacebook() {
@@ -406,7 +409,7 @@
        
             FB.api('/me', function(response) {
        
-              var user = new StackMob.User({ username: response.email });
+              user = new StackMob.User({ username: response.email });
               user.loginWithFacebookAutoCreate(accessToken, false);
        
             });
@@ -414,7 +417,22 @@
           } else {
             console.log('User cancelled login or did not fully authorize.');
           }
+
+          refreshUserLogin();
         }, {scope: 'email'});
+      }
+
+      function refreshUserLogin() {        
+        if ( (user != null) && (user.isLoggedIn()) ) {
+          $('#headerLoginStatus').html('<input type="button" class="btn btn-info" value="'+user.username+'" onclick="logout();" id="logoutButton"></input>');
+        } else {
+          $('#headerLoginStatus').html('<input type="button" class="btn btn-success" value="Log in" onclick="loginWithFacebook();" id="loginButton"></input>');
+        }
+      }
+
+      function logout() {
+        user.logout();
+        refreshUserLogin();
       }
 
     </script>
@@ -426,13 +444,13 @@
       <div class="navbar-inner">
         <a class="brand" href="#">Triangulate.me</a>
         <ul class="nav">
-          <li><input type="button" class="btn btn-success" value="Triangulate me!" onclick="triangulate();" id="triangulateButton"></button></li>
+          <li><input type="button" class="btn btn-success" value="Triangulate me!" onclick="triangulate();" id="triangulateButton"></input></li>
           <li class="divider-vertical"></li>
-          <li><input type="button" class="btn btn-info" value="Clear recommendations" onclick="clearRecommendations();" id="clearRecommendationsButton"></button></li>
+          <li><input type="button" class="btn btn-info" value="Clear recommendations" onclick="clearRecommendations();" id="clearRecommendationsButton"></input></li>
           <li class="divider-vertical"></li>
-          <li><input type="button" class="btn btn-info" value="Clear markers and meeting point" onclick="clearMarkers();" id="clearMarkersButton"></button></li>
+          <li><input type="button" class="btn btn-info" value="Clear markers and meeting point" onclick="clearMarkers();" id="clearMarkersButton"></input></li>
           <li class="divider-vertical"></li>
-          <li><input type="button" class="btn btn-info" value="Log in" onclick="loginWithFacebook();" id="loginButton"></button></li>
+          <li id="headerLoginStatus" class="pull-right"></li>
           <li class="divider-vertical"></li>
           <li><div id="loader"></div></li>
         </ul>
