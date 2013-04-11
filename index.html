@@ -439,9 +439,9 @@
       function refreshUserLogin() {
 
         StackMob.isLoggedIn({
-          yes: function(){
+          yes: function(username){
             console.log('Refreshing user login. User is logged in.');
-          $('#headerLoginStatus').html('<input type="button" class="btn btn-info" value="'+user.username+'" onclick="logout();" id="logoutButton"></input>');
+          $('#headerLoginStatus').html('<input type="button" class="btn btn-info" value="'+username+'" onclick="logout();" id="logoutButton"></input>');
           },
           no: function(){
             console.log('Refreshing user login. User is not logged: "'+user+'"');
