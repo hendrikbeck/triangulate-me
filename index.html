@@ -411,6 +411,7 @@
        
               user = new StackMob.User({ username: response.email });
               user.loginWithFacebookAutoCreate(accessToken, false);
+              console.log("Logged in user succesfully, here is the status user.isLoggedIn(): " + user.isLoggedIn());
        
             });
        
