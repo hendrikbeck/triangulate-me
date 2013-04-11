@@ -439,12 +439,13 @@
       function refreshUserLogin() {
 
         StackMob.isLoggedIn({
-          yes: function(username){
-            console.log('Refreshing user login. User is logged in.');
+          yes: function(u){
+            console.log('Refreshing user login. User is logged in as "+u+".');
             if (user == null) {
-              user.login(true);
+              user = new StackMob.User({ username: u });
+              user.fetch();
             }
-            $('#headerLoginStatus').html('<input type="button" class="btn btn-info" value="'+username+'" onclick="logout();" id="logoutButton"></input>');
+            $('#headerLoginStatus').html('<input type="button" class="btn btn-info" value="'+u+'" onclick="logout();" id="logoutButton"></input>');
           },
           no: function(){
             console.log('Refreshing user login. User is not logged: "'+user+'"');
