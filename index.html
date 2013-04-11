@@ -441,11 +441,14 @@
         StackMob.isLoggedIn({
           yes: function(username){
             console.log('Refreshing user login. User is logged in.');
-          $('#headerLoginStatus').html('<input type="button" class="btn btn-info" value="'+username+'" onclick="logout();" id="logoutButton"></input>');
+            if (user == null) {
+              user.login(true);
+            }
+            $('#headerLoginStatus').html('<input type="button" class="btn btn-info" value="'+username+'" onclick="logout();" id="logoutButton"></input>');
           },
           no: function(){
             console.log('Refreshing user login. User is not logged: "'+user+'"');
-          $('#headerLoginStatus').html('<input type="button" class="btn btn-success" value="Log in" onclick="loginWithFacebook();" id="loginButton"></input>');
+            $('#headerLoginStatus').html('<input type="button" class="btn btn-success" value="Log in" onclick="loginWithFacebook();" id="loginButton"></input>');
           }
         });
       }
