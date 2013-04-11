@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html ng-app>
+  <head>
+    <title>Triangulate.me</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
+    <script type="text/javascript" src="http://static.stackmob.com/js/json2-min.js"></script>
+    <script type="text/javascript" src="http://static.stackmob.com/js/underscore-1.4.4-min.js"></script>
+    <script type="text/javascript" src="http://static.stackmob.com/js/backbone-1.0.0-min.js"></script>
+    <script type="text/javascript" src="http://static.stackmob.com/js/stackmob-js-0.9.1-bundled-min.js"></script>
+
+    <script type="text/javascript">
+    StackMob.init({
+        publicKey: "5b6904f7-8b6e-400c-b737-f38440ddb7b8",
+        apiVersion: 0
+    });
+    </script>
+
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-39985908-2']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+
+    <style>
+      
+
+      html,body {width:100%;height:100%;margin:0;padding:0;}
+
+      #map-canvas {
+          display:block;
+          position:absolute;
+          height:auto;
+          bottom:0;
+          top:-7px;
+          left:0;
+          right:0;
+          margin-top:50px; /* Set margin to your navbar height */
+      }
+
+      #recommendations {
+        position:absolute;
+        right:5px;
+        top:115px;
+        width:158px;
+        height:60%;
+        overflow:auto;
+        padding-top: 5px;
+        padding-left: 10px;
+        background-color: #EEEEEE;
+      }
+
+      #recommendations-header {
+        position:absolute;
+        right:5px;
+        top:85px;
+        width:178px;
+        height:30px;
+        padding-top: 5px;
+        padding-left: 10px;
+        overflow:auto;
+        text-align:left;
+        background-color: #000000;
+        color: #FFFFFF;
+        border: 1px solid #e3e3e3;
+        -webkit-border-radius: 4px;
+           -moz-border-radius: 4px;
+                border-radius: 4px;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+           -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+                box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+      }
+
+    </style>
+
+    <script type="text/javascript">
+
+      var markers = [];
+
+      var recommendationMarkers = [];
+
+      var centerMarker = null;
+
+      var map;
+
+      var loadingStack = 0;
+
+      var infowindow = new google.maps.InfoWindow();
+
+      
+      window.fbAsyncInit = function() {
+          FB.init({
+            appId      : '357811217673224', // FB App ID
+            status     : true, // check login status
+            cookie     : true, // enable cookies to allow the server to access the session
+            xfbml      : true  // parse XFBML
+          });
+        };
+
+      (function(d){
+           var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
+           js = d.createElement('script'); js.id = id; js.async = true;
+           js.src = '//connect.facebook.net/en_US/all.js';
+           d.getElementsByTagName('head')[0].appendChild(js);
+         }(document));
+
+
+      function initialize() {
+        var mapOptions = {
+          zoom: 12,
+          center: new google.maps.LatLng(10.763497,106.724281),
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          panControl: true,
+          zoomControl: true,
+          scaleControl: true
+        };
+        map = new google.maps.Map(document.getElementById('map-canvas'),
+            mapOptions);
+
+        google.maps.event.addListener(map, 'click', function(e) {
+          _gaq.push(['_trackEvent', "Actions", "AddMarker"]);
+          var marker = new google.maps.Marker({
+            position: e.latLng,
+            map: map,
+            title: 'One position'
+          });
+          markers.push(marker);
+          toggleButtonStates();
+          updateUrlHash();
+          google.maps.event.addListener(marker, "click", function() {
+            _gaq.push(['_trackEvent', "Actions", "RemoveMarker"]);
+            marker.setMap(null);
+            markers.pop(marker);
+            toggleButtonStates();
+            updateUrlHash();
+          });
+        });
+
+        locateUser();
+      }
+
+
+
+      google.maps.event.addDomListener(window, 'load', initialize);
+
+      function toggleButtonStates() {
+        if (markers.length < 1) {
+          document.getElementById('triangulateButton').disabled = true;
+          document.getElementById('clearMarkersButton').disabled = true;
+        } else {
+          document.getElementById('triangulateButton').disabled = false;
+          document.getElementById('clearMarkersButton').disabled = false;
+        }
+
+        if (recommendationMarkers.length <= 0) {
+          document.getElementById('clearRecommendationsButton').disabled = true;
+        } else {
+          document.getElementById('clearRecommendationsButton').disabled = false;
+        }        
+      }
+
+      function locateUser() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(initMapAtUserLocation);
+        }
+      }
+
+      function resetMap() {
+        map.setZoom(12);
+        map.panTo(new google.maps.LatLng(10.763497,106.724281));
+      }
+      
+      function initMapAtUserLocation(position) {
+        map.setCenter(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
+      }
+
+      function listMarkers() {
+        $('#markers').html('');
+        for (m in markers) {
+          var v = markers[m].getPosition() + '<br/>';
+          $('#markers').append(v);
+        }
+      }
+
+      function getCenter(ms) {
+        var lat = 0;
+        var lng = 0;
+        for (m in ms) {
+          lat += markers[m].getPosition().lat();
+          lng += markers[m].getPosition().lng();
+        }
+        
+        lat = lat / ms.length;
+        lng = lng / ms.length;
+
+        return new google.maps.LatLng(lat, lng);
+      }
+
+      function triangulate() {
+
+        _gaq.push(['_trackEvent', "Actions", "Triangulate", "", markers.length]);
+
+        if (markers.length < 1) {
+          alert("You must have at least 1 marker on the map!");
+          return;
+        }
+
+        var center = getCenter(markers);
+
+        clearRecommendations();
+
+        findAddress(center);
+
+        if (centerMarker != null) {
+          centerMarker.setMap(null);
+        }
+
+        var marker = new google.maps.Marker({
+            position: center,
+            map: map,
+            icon: 'http://www.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png',
+            title: 'Center'
+          });
+
+        centerMarker = marker;
+
+        map.panTo(center);
+        map.setZoom(15);
+
+        getFoursquareRecommendations(centerMarker.getPosition());
+      }
+
+      function getFoursquareRecommendations(latlng) {
+
+        startLoading();
+
+        var url='https://api.foursquare.com/v2/venues/explore?ll=' + latlng.lat() + ',' + latlng.lng() + '&client_id=54BH5TL00RHYMNRBWLIRBC3Z2MDPNYP0CCYT3AFZIUQLYS2F&client_secret=QTSCBR3V0OLOHFR32GRQ2FAGT0LMH0JCPZJRKCBLSV5J3I0F&v=20130408';
+
+        $('#recommendations').html('<img src="ajax-loader.gif"></img>');
+
+        var content;
+        //$.get(url, function(data){
+        $.getJSON(url, function(data) {
+          $('#recommendations').html("");
+          var groups = data.response.groups;          
+          var recGroups = getRecommendedGroups(groups);          
+          if (recGroups != null) {
+            setRecommendationMarkers(recGroups.items);
+            for (item in recGroups.items) {
+              $('#recommendations').append('<i class="icon-map-marker"></i>&nbsp;<a target="_blank" href="'+recGroups.items[item].venue.canonicalUrl+'" data-toggle="tooltip" data-placement="bottom" title="'+recGroups.items[item].venue.categories[0].shortName+' with '+recGroups.items[item].venue.stats.checkinsCount+' checkins">'+recGroups.items[item].venue.name + '</a><br/>');
+            }
+          } else {
+            $('#recommendations').html("No Foursquare recommendations found.");
+          }
+
+          toggleButtonStates();
+          stopLoading();
+          $("#recommendations a").tooltip();
+        });
+      }
+
+      function getRecommendedGroups(groups) {
+        for (group in groups) {
+          if ( groups[group].name === "recommended") {
+            return groups[group];
+          }
+        }
+        return null;
+      }
+
+      function updateUrlHash() {
+        //var newHash = "";
+        //for (i in markers) {
+        //  newHash += i + "=" + markers[i].getPosition().lat() + "," + markers[i].getPosition().lng() + "&"
+        //}
+        //window.location.hash = $.base64.encode(newHash);
+      }
+
+      function setRecommendationMarkers(items) {
+
+        clearRecommendations();
+
+        for (i in items) {
+          var item = items[i];
+          var marker = new google.maps.Marker({
+            position: new google.maps.LatLng(item.venue.location.lat, item.venue.location.lng),
+            map: map,
+            icon: item.venue.categories[0].icon.prefix + "bg_32" + item.venue.categories[0].icon.suffix,
+            //icon: 'https://maps.gstatic.com/intl/en_ALL/mapfiles/markers2/measle.png',
+            backgroundColor: '#FFFFFF',
+            title: item.venue.name
+          });
+          recommendationMarkers.push(marker);
+          addInfoWindow(marker, item.venue.name, item.venue.categories[0].shortName, item.venue.canonicalUrl);
+        }
+      }
+
+      function addInfoWindow(m, name, category, url) {        
+        google.maps.event.addListener(m, 'click', function() {
+          infowindow.setContent(name + '<br/>' + category + '<br/><a href="'+url+'" target="_blank">Open in Foursquare</a>');
+          infowindow.open(map,m);
+        });
+      }
+
+      function clearRecommendations() {
+
+        _gaq.push(['_trackEvent', "Actions", "ClearRecommendations", "", recommendationMarkers.length]);
+
+        for (i in recommendationMarkers) {
+          recommendationMarkers[i].setMap(null);
+        }
+        recommendationMarkers = [];
+        $('#recommendations').html("");
+        toggleButtonStates();
+      }
+
+      function clearMarkers() {
+
+        _gaq.push(['_trackEvent', "Actions", "ClearMarkers", "", markers.length]);
+
+        for (i in markers) {
+          markers[i].setMap(null);
+        }
+        markers = [];
+        $('#address').html("");
+
+        if (centerMarker != null) {
+          centerMarker.setMap(null);
+          centerMarker = null;
+        }
+        toggleButtonStates();
+      }
+
+      function findAddress(latlng) {
+        startLoading();
+        var url = 'http://maps.googleapis.com/maps/api/geocode/json?latlng=' + latlng.lat() + ',' + latlng.lng() + '&sensor=false';
+
+        $('#address').html('<img src="ajax-loader.gif"></img>');
+
+        var content;
+        //$.get(url, function(data){
+        $.getJSON(url, function(data) {
+          if (data.status != "OK") {
+            $('#address').html('Could not resolve address.');
+            return;
+          }
+          $('#address').html('Your meeting point is at ' + data.results[0].formatted_address);
+          infowindow.setContent(data.results[0].formatted_address);
+          infowindow.open(map,centerMarker);
+
+          google.maps.event.addListener(centerMarker, 'click', function() {
+            infowindow.setContent(data.results[0].formatted_address);
+            infowindow.open(map,centerMarker);
+          });
+
+          stopLoading();
+        });
+      }
+
+      $(function(){
+      var width = $(window).width(),
+      new_class = width >= 1571 ? 'span17' :
+                  width >= 1411 ? 'span15' :
+                  width >= 1251 ? 'span12' :
+                  width >= 995 ? 'span8' : 'span8';
+      $('#fluid-span').removeClass('span17 span15 span12 span8').addClass(new_class);
+      //alert(width);
+      });
+
+      function startLoading() {
+        if (loadingStack == 0) {
+          //$('#loader').html('<img src="ajax-loader.gif"></img>');
+        }
+        loadingStack++;
+      }
+
+      function stopLoading() {
+        loadingStack--;
+        if (loadingStack == 0) {
+          $('#loader').html('');
+        }
+      }
+
+      function init() {
+        toggleButtonStates();
+      }
+
+      function loginWithFacebook() {
+        //Login with Facebook
+        FB.login(function(response) {
+          if (response.authResponse) {
+            var accessToken = response.authResponse.accessToken;
+       
+            FB.api('/me', function(response) {
+       
+              var user = new StackMob.User({ username: response.email });
+              user.linkUserWithFacebook(accessToken, false);
+       
+            });
+       
+          } else {
+            console.log('User cancelled login or did not fully authorize.');
+          }
+        }, {scope: 'email'});
+      }
+
+    </script>
+
+  </head>
+  <body onload="init();">
+
+    <div class="navbar">
+      <div class="navbar-inner">
+        <a class="brand" href="#">Triangulate.me</a>
+        <ul class="nav">
+          <li><input type="button" class="btn btn-success" value="Triangulate me!" onclick="triangulate();" id="triangulateButton"></button></li>
+          <li class="divider-vertical"></li>
+          <li><input type="button" class="btn btn-info" value="Clear recommendations" onclick="clearRecommendations();" id="clearRecommendationsButton"></button></li>
+          <li class="divider-vertical"></li>
+          <li><input type="button" class="btn btn-info" value="Clear markers and meeting point" onclick="clearMarkers();" id="clearMarkersButton"></button></li>
+          <li class="divider-vertical"></li>
+          <li><input type="button" class="btn btn-info" value="Log in" onclick="loginWithFacebook();" id="loginButton"></button></li>
+          <li class="divider-vertical"></li>
+          <li><div id="loader"></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row">
+
+      <div id="fluid-span">
+        <div id="map-canvas" class="google-maps"></div>
+      </div>
+
+      
+            
+    </div>
+
+
+    <div id="address" class="well"></div>
+    <div id="recommendations-header">Recommendations</div>
+    <div id="recommendations" class="well"></div>
+    
+
+  </body>
+
+</html>
