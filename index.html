@@ -449,6 +449,7 @@
               user = new StackMob.User({ username: u });
               user.fetch();
             }
+            console.log("Facebook username: " + user.get('facebookUsername'));
             $('#headerLoginStatus').html('<img src="http://graph.facebook.com/'+user.get('facebookUsername')+'/picture"/><input type="button" class="btn btn-info" value="'+u+'" onclick="logout();" id="logoutButton"></input>');
           },
           no: function(){
