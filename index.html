@@ -455,13 +455,28 @@
             }
             console.log("Username: " + user.get('username'));
             console.log("Facebook username: " + user.get('facebookUsername'));
-            $('#headerLoginStatus').html('<img src="http://graph.facebook.com/'+user.get('facebookUsername')+'/picture"/><input type="button" class="btn btn-info" value="'+u+'" onclick="logout();" id="logoutButton"></input>');
+            $('#headerLoginStatus').html(getHtmlForLoginArea(user));
           },
           no: function(){
             console.log('Refreshing user login. User is not logged: "'+user+'"');
-            $('#headerLoginStatus').html('<input type="button" class="btn btn-success" value="Log in" onclick="loginWithFacebook();" id="loginButton"></input>');
+            $('#headerLoginStatus').html('<div class="fb-login-button btn" data-show-faces="false" data-width="300" data-max-rows="1" onclick="loginWithFacebook();"></div>');
           }
         });
+      }
+
+      function getHtmlForLoginArea(user) {
+        var result = '';
+
+        result += '<div class="btn-group">';
+        result += '<div><img src="http://graph.facebook.com/'+user.get('facebookUsername')+'/picture"/>' + user.get('username') + '</div>';
+        result += '<button class="btn dropdown-toggle" data-toggle="dropdown">';
+        result += '<span class="caret"></span>';
+        result += '</button>';
+        result += '<ul class="dropdown-menu">';
+        result += '<li onclick="logout();">Logout</li>';
+        result += '</ul></div>';
+
+        return result;
       }
 
       function logout() {
@@ -485,6 +500,15 @@
 
   </head>
   <body onload="init();">
+
+    <div id="fb-root"></div>
+    <script>(function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=357811217673224";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));</script>
 
     <div class="navbar">
       <div class="navbar-inner">
