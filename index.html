@@ -468,9 +468,8 @@
         var result = '';
 
         result += '<div class="btn-group">';
-        result += '<div><img src="http://graph.facebook.com/'+user.get('facebookUsername')+'/picture"/>' + user.get('username') + '</div>';
         result += '<button class="btn dropdown-toggle" data-toggle="dropdown">';
-        result += '<span class="caret"></span>';
+        result += '<img src="http://graph.facebook.com/'+user.get('facebookUsername')+'/picture"/>' + user.get('username') + '<span class="caret"></span>';
         result += '</button>';
         result += '<ul class="dropdown-menu">';
         result += '<li onclick="logout();">Logout</li>';
