@@ -408,7 +408,7 @@
        
             FB.api('/me', function(response) {
        
-              user = new StackMob.User({ username: response.email });
+              user = new StackMob.User({ username: response.email, facebookUsername: response.username });
               console.log('Calling user.loginWithFacebookAutoCreate()...');
               user.loginWithFacebookAutoCreate(accessToken, false, {
                 success: function(model) {
