@@ -102,6 +102,8 @@
 
       var user;
 
+      var addMarkerMode = false;
+
       
       window.fbAsyncInit = function() {
           FB.init({
@@ -133,22 +135,24 @@
             mapOptions);
 
         google.maps.event.addListener(map, 'click', function(e) {
-          _gaq.push(['_trackEvent', "Actions", "AddMarker"]);
-          var marker = new google.maps.Marker({
-            position: e.latLng,
-            map: map,
-            title: 'One position'
-          });
-          markers.push(marker);
-          toggleButtonStates();
-          updateUrlHash();
-          google.maps.event.addListener(marker, "click", function() {
-            _gaq.push(['_trackEvent', "Actions", "RemoveMarker"]);
-            marker.setMap(null);
-            markers.pop(marker);
+          if (addMarkerMode) {
+            _gaq.push(['_trackEvent', "Actions", "AddMarker"]);
+            var marker = new google.maps.Marker({
+              position: e.latLng,
+              map: map,
+              title: 'One position'
+            });
+            markers.push(marker);
             toggleButtonStates();
             updateUrlHash();
-          });
+            google.maps.event.addListener(marker, "click", function() {
+              _gaq.push(['_trackEvent', "Actions", "RemoveMarker"]);
+              marker.setMap(null);
+              markers.pop(marker);
+              toggleButtonStates();
+              updateUrlHash();              
+            });
+          }
         });
 
         locateUser();
@@ -469,6 +473,14 @@
         refreshUserLogin();
       });
 
+      function toggleAddMarkerMode() {
+        if (addMarkerMode) {
+          addMarkerMode = false;
+        } else {
+          addMarkerMode = true;
+        }
+      }
+
     </script>
 
   </head>
@@ -483,6 +495,8 @@
           <li><input type="button" class="btn btn-info" value="Clear recommendations" onclick="clearRecommendations();" id="clearRecommendationsButton"></input></li>
           <li class="divider-vertical"></li>
           <li><input type="button" class="btn btn-info" value="Clear markers and meeting point" onclick="clearMarkers();" id="clearMarkersButton"></input></li>
+          <li class="divider-vertical"></li>
+          <li><button type="button" class="btn btn-primary" data-toggle="button" onclick="toggleAddMarkerMode();">Add people</button></li>
           <li class="divider-vertical"></li>
           <li id="headerLoginStatus" class="pull-right"></li>
           <li class="divider-vertical"></li>
