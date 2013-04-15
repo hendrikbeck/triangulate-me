@@ -408,20 +408,22 @@
        
             FB.api('/me', function(response) {
        
-              user = new StackMob.User({ username: response.email, facebookUsername: response.username });
+              user = new StackMob.User({ username: response.email });
               console.log('Calling user.loginWithFacebookAutoCreate()...');
               user.loginWithFacebookAutoCreate(accessToken, false, {
                 success: function(model) {
-                  console.log("Callback success")
+                  console.log("Logged in user succesfully, here is the status user.isLoggedIn(): " + user.isLoggedIn());                  
+                  user.save({ facebookUsername: response.username }, {
+                    success: function(model) {},
+                    error: function(model, response) {}
+                  });
                   refreshUserLogin();
                 },
                 error: function(model, response) {
-                  console.log('Callback error')
+                  console.log('Callback error');
                   refreshUserLogin();
                 }
               });
-
-              console.log("Logged in user succesfully, here is the status user.isLoggedIn(): " + user.isLoggedIn());
 
               //if (user.isLoggedIn() == false) {
               //  console("user.isLoggedIn() was 'false', so now trying to call login()");
